@@ -44,7 +44,7 @@ let server = Bootit.start(app, {
 
 ## Contributing
 
-Respondent makes use of [mocha]() and [chai]() in order to conduct it's unit tests, thus contributions
+Bootit makes use of [mocha]() and [chai]() in order to conduct it's unit tests, thus contributions
 should be made with unit tests relevant to your work.
 
 ## License
