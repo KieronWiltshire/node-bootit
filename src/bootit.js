@@ -31,7 +31,7 @@ class Bootit {
     redirectResponseBody,
     redirectTrustProxy
   } = {}) {
-    
+
     insecurePort = insecurePort || 80;
 
     let checkFileExists = function(filePath) {
@@ -125,7 +125,13 @@ class Bootit {
      */
     if (secure && redirectToHttps) {
       let redirServer = null;
-      let redir = redirectHttps({ port, trustProxy: redirectTrustProxy, body: redirectResponseBody });
+      let redirOptions = { port, trustProxy: redirectTrustProxy };
+
+      if (redirectResponseBody) {
+        redirOptions.body = redirectResponseBody;
+      }
+
+      let redir = redirectHttps(redirOptions);
 
       if (greenlock) {
         redirServer = http.createServer(greenlock.middleware(redir));
