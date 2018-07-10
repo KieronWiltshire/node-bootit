@@ -4,6 +4,7 @@
 import fs from 'fs';
 import http from 'http';
 import https from 'https';
+import {default as redirectHttps} from 'redirect-https';
 import {default as createDebugger} from 'debug';
 
 const debug = createDebugger('bootit:bootstrap');
@@ -20,8 +21,18 @@ class Bootit {
    * @param {object} options
    * @returns {object}
    */
-  static start(application, options) {
-    options = options || {};
+  static start(application, {
+    key,
+    certificate,
+    greenlock,
+    io,
+    insecurePort,
+    redirectToHttps,
+    redirectResponseBody,
+    redirectTrustProxy
+  } = {}) {
+    
+    insecurePort = insecurePort || 80;
 
     let checkFileExists = function(filePath) {
       let stats = fs.lstatSync(filePath);
@@ -29,20 +40,30 @@ class Bootit {
     }
 
     var server = null;
-    let secure = ((options.key && checkFileExists(options.key)) || (options.certificate && checkFileExists(options.certificate)));
+    let secure = ((key && checkFileExists(key)) || (certificate && checkFileExists(certificate)) || (greenlock && true));
 
     if (secure) {
-      if (options.key && !checkFileExists(options.key)) {
-        throw new Error('{options.key} must be a valid path to a file containing your key');
-      } else if (options.certificate && !checkFileExists(options.certificate)) {
-        throw new Error('{options.certificate} must be a valid path to a file containing your certificate');
+      if (!greenlock) {
+        if (key && !checkFileExists(key)) {
+          throw new Error('{options.key} must be a valid path to a file containing your key');
+        } else if (certificate && !checkFileExists(certificate)) {
+          throw new Error('{options.certificate} must be a valid path to a file containing your certificate');
+        }
       }
 
       try {
-        server = https.createServer({
-          'key': fs.readFileSync(options.key),
-          'cert': fs.readFileSync(options.certificate)
-        }, application);
+        let serverOptions = null;
+
+        if (greenlock) {
+          serverOptions = greenlock.tlsOptions;
+        } else {
+          serverOptions = {
+            'key': fs.readFileSync(key),
+            'cert': fs.readFileSync(certificate)
+          };
+        }
+
+        server = https.createServer(serverOptions, application);
       } catch(error) {
         debug(error);
         debug('Unable to create a https connection.');
@@ -53,8 +74,8 @@ class Bootit {
     }
 
     // Attach socket.io instance
-    if (options.io) {
-      options.io.attach(server);
+    if (io) {
+      io.attach(server);
     }
 
     /**
@@ -67,10 +88,11 @@ class Bootit {
       : 'port ' + addr.port;
 
       server.bootstrapped = true;
+
       debug('Listening on ' + bind);
     });
 
-    let port = application.get('port') || (secure ? 443 : 80);
+    let port = application.get('port') || (secure ? 443 : insecurePort);
 
     /**
      * EventHandler: error
@@ -98,7 +120,28 @@ class Bootit {
       }
     });
 
+    /**
+     * Redirect to HTTPS
+     */
+    if (secure && redirectToHttps) {
+      let redirServer = null;
+      let redir = redirectHttps({ port, trustProxy: redirectTrustProxy, body: redirectResponseBody });
+
+      if (greenlock) {
+        redirServer = http.createServer(greenlock.middleware(redir));
+      } else {
+        redirServer = http.createServer();
+      }
+
+      redirServer.listen(insecurePort);
+    }
+
+    /*
+     * Setup the server and listen on the specified port
+     */
     server.listen(port);
+
+    // Return the server instance
     return server;
   }
 
