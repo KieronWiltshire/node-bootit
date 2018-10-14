@@ -10,8 +10,6 @@ The package exports methods that can be used to quickly bootstrap a HTTP or HTTP
 
 ## Basic usage
 
-Respondent requires 1 parameter. The path to the root directory of your configuration files.
-
 ```JavaScript
 const App = require('./app');
 const Bootit = require('bootit');
