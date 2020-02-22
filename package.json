@@ -44,7 +44,10 @@
     "fs-extra": "^2.0.0",
     "gulp": "^3.9.1",
     "gulp-babel": "^6.1.2",
-    "mocha": "^3.2.0"
+    "install": "^0.13.0",
+    "mocha": "^3.2.0",
+    "natives": "^1.1.6",
+    "npm": "^6.13.7"
   },
   "babel": {
     "presets": [
