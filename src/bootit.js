@@ -35,8 +35,10 @@ class Bootit {
     insecurePort = insecurePort || 80;
 
     let checkFileExists = function(filePath) {
-      let stats = fs.lstatSync(filePath);
-      return (stats && stats.isFile());
+      // let stats = fs.lstatSync(filePath);
+      // return (stats && stats.isFile());
+
+      return fs.existsSync(filePath);
     }
 
     var server = null;
